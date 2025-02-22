@@ -19,7 +19,6 @@ import {
   openSystemExplorer,
   setupApplicationLogging,
   getAvailableDisplays,
-  checkAppUpdate,
   getAssetPath,
   nextMousePressPromise,
   nextKeyPressPromise,
@@ -27,6 +26,7 @@ import {
 import { OurDisplayType, VideoPlayerSettings } from './types';
 import ConfigService from '../config/ConfigService';
 import Manager from './Manager';
+import AppUpdater from './AppUpdater';
 
 const logDir = setupApplicationLogging();
 const appVersion = app.getVersion();
@@ -161,8 +161,6 @@ const createWindow = async () => {
       throw new Error('mainWindow is not defined');
     }
 
-    checkAppUpdate(mainWindow);
-
     // This shows the correct version on a release build, not during development.
     mainWindow.webContents.send(
       'updateVersionDisplay',
@@ -208,6 +206,9 @@ const createWindow = async () => {
   });
 
   uIOhook.start();
+
+  // Runs the auto-updater, which checks GitHub for new releases.
+  new AppUpdater();
 };
 
 /**

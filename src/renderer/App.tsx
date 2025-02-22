@@ -8,14 +8,12 @@ import {
   RecStatus,
   SaveStatus,
   AppState,
-  UpgradeStatus,
   RendererVideo,
   CloudStatus,
   DiskStatus,
 } from 'main/types';
 import Box from '@mui/material/Box';
-import { ArrowBigDownDash } from 'lucide-react';
-import { getLocalePhrase, Language, Phrase } from 'localisation/translations';
+import { Language } from 'localisation/translations';
 import Layout from './Layout';
 import RendererTitleBar from './RendererTitleBar';
 import './App.css';
@@ -24,8 +22,6 @@ import { getCategoryFromConfig, getVideoCategoryFilter } from './rendererutils';
 import StateManager from './StateManager';
 import { TooltipProvider } from './components/Tooltip/Tooltip';
 import Toaster from './components/Toast/Toaster';
-import { useToast } from './components/Toast/useToast';
-import { ToastAction } from './components/Toast/Toast';
 import SideMenu from './SideMenu';
 import useTable from './components/Tables/TableData';
 import VideoFilter from './VideoFilter';
@@ -37,17 +33,10 @@ const WarcraftRecorder = () => {
   const [error, setError] = useState<string>('');
   const [micStatus, setMicStatus] = useState<MicStatus>(MicStatus.NONE);
   const [crashes, setCrashes] = useState<Crashes>([]);
-  const upgradeNotified = useRef(false);
-  const { toast } = useToast();
 
   const [recorderStatus, setRecorderStatus] = useState<RecStatus>(
     RecStatus.WaitingForWoW,
   );
-
-  const [upgradeStatus, setUpgradeStatus] = useState<UpgradeStatus>({
-    available: false,
-    link: undefined,
-  });
 
   const [savingStatus, setSavingStatus] = useState<SaveStatus>(
     SaveStatus.NotSaving,
@@ -76,42 +65,6 @@ const WarcraftRecorder = () => {
     cloudStatus: { usage: 0, limit: 0, guilds: [] },
     diskStatus: { usage: 0, limit: 0 },
   });
-
-  useEffect(() => {
-    if (upgradeNotified.current) return;
-
-    const title = getLocalePhrase(
-      appState.language,
-      Phrase.UpdateAvailableTitle,
-    );
-
-    const description = getLocalePhrase(
-      appState.language,
-      Phrase.UpdateAvailableText,
-    );
-
-    const buttonText = getLocalePhrase(
-      appState.language,
-      Phrase.UpdateAvailableDownloadButtonText,
-    );
-
-    if (upgradeStatus.available) {
-      toast({
-        title,
-        description,
-        action: (
-          <ToastAction
-            altText={buttonText}
-            onClick={() => ipc.sendMessage('openURL', [upgradeStatus.link])}
-          >
-            <ArrowBigDownDash /> {buttonText}
-          </ToastAction>
-        ),
-        duration: 60000, // stay up for a minute I guess
-      });
-      upgradeNotified.current = true;
-    }
-  }, [upgradeStatus, upgradeNotified, toast, appState.language]);
 
   // The video state contains most of the frontend state, it's complex so
   // frontend triggered modifications go through the StateManager class, which
@@ -171,13 +124,6 @@ const WarcraftRecorder = () => {
     setSavingStatus(status as SaveStatus);
   };
 
-  const updateUpgradeStatus = (available: unknown, link: unknown) => {
-    setUpgradeStatus({
-      available: available as boolean,
-      link: link as string,
-    });
-  };
-
   const updateMicStatus = (status: unknown) => {
     setMicStatus(status as MicStatus);
   };
@@ -209,7 +155,6 @@ const WarcraftRecorder = () => {
     ipc.on('refreshState', doRefresh);
     ipc.on('updateRecStatus', updateRecStatus);
     ipc.on('updateSaveStatus', updateSaveStatus);
-    ipc.on('updateUpgradeStatus', updateUpgradeStatus);
     ipc.on('updateMicStatus', updateMicStatus);
     ipc.on('updateCrashes', updateCrashes);
     ipc.on('updateDiskStatus', updateDiskStatus);
@@ -248,7 +193,6 @@ const WarcraftRecorder = () => {
             error={error}
             micStatus={micStatus}
             crashes={crashes}
-            upgradeStatus={upgradeStatus}
             savingStatus={savingStatus}
             config={config}
           />
